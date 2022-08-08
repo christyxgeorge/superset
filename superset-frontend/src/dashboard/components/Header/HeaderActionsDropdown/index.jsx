@@ -37,6 +37,17 @@ import { getActiveFilters } from 'src/dashboard/util/activeDashboardFilters';
 import { getUrlParam } from 'src/utils/urlUtils';
 import { FILTER_BOX_MIGRATION_STATES } from 'src/explore/constants';
 
+const appContainer = document.getElementById('app');
+const bootstrapData = JSON.parse(
+  appContainer?.getAttribute('data-bootstrap') || '{}',
+);
+const noRefreshRoles = bootstrapData?.common?.no_refresh_roles || [];
+const userRoles = Object.keys(bootstrapData?.user?.roles || {});
+const userNoRefreshRoles = userRoles.filter(value =>
+  noRefreshRoles.includes(value),
+);
+const userDisallowRefresh = !!userNoRefreshRoles.length;
+
 const propTypes = {
   addSuccessToast: PropTypes.func.isRequired,
   addDangerToast: PropTypes.func.isRequired,
@@ -245,13 +256,13 @@ class HeaderActionsDropdown extends React.PureComponent {
           <Menu.Item
             key={MENU_KEYS.REFRESH_DASHBOARD}
             data-test="refresh-dashboard-menu-item"
-            disabled={isLoading}
+            disabled={userDisallowRefresh || isLoading}
             onClick={this.handleMenuClick}
           >
             {t('Refresh dashboard')}
           </Menu.Item>
         )}
-        {!editMode && (
+        {!userDisallowRefresh && !editMode && (
           <Menu.Item
             key={MENU_KEYS.TOGGLE_FULLSCREEN}
             onClick={this.handleMenuClick}
@@ -378,7 +389,10 @@ class HeaderActionsDropdown extends React.PureComponent {
             </Menu.Item>
           )}
 
-        <Menu.Item key={MENU_KEYS.AUTOREFRESH_MODAL}>
+        <Menu.Item
+          key={MENU_KEYS.AUTOREFRESH_MODAL}
+          disabled={userDisallowRefresh}
+        >
           <RefreshIntervalModal
             addSuccessToast={this.props.addSuccessToast}
             refreshFrequency={refreshFrequency}

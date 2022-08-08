@@ -41,6 +41,17 @@ import Button from 'src/components/Button';
 import ViewQueryModal from 'src/explore/components/controls/ViewQueryModal';
 import { ResultsPaneOnDashboard } from 'src/explore/components/DataTablesPane';
 
+const appContainer = document.getElementById('app');
+const bootstrapData = JSON.parse(
+  appContainer?.getAttribute('data-bootstrap') || '{}',
+);
+const noRefreshRoles = bootstrapData?.common?.no_refresh_roles || [];
+const userRoles = Object.keys(bootstrapData?.user?.roles || {});
+const userNoRefreshRoles = userRoles.filter(value =>
+  noRefreshRoles.includes(value),
+);
+const userDisallowRefresh = !!userNoRefreshRoles.length;
+
 const MENU_KEYS = {
   CROSS_FILTER_SCOPING: 'cross_filter_scoping',
   DOWNLOAD_AS_IMAGE: 'download_as_image',
@@ -286,7 +297,7 @@ class SliceHeaderControls extends React.PureComponent<
       >
         <Menu.Item
           key={MENU_KEYS.FORCE_REFRESH}
-          disabled={this.props.chartStatus === 'loading'}
+          disabled={userDisallowRefresh || this.props.chartStatus === 'loading'}
           style={{ height: 'auto', lineHeight: 'initial' }}
           data-test="refresh-chart-menu-item"
         >

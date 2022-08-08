@@ -43,6 +43,7 @@ const ROOT_DIR = path.resolve(__dirname, '..');
 
 const {
   mode = 'development',
+  devserverHost = '0.0.0.0',
   devserverPort = 9000,
   measure = false,
   analyzeBundle = false,
@@ -51,6 +52,7 @@ const {
 } = parsedArgs;
 const isDevMode = mode !== 'production';
 const isDevServer = process.argv[1].includes('webpack-dev-server');
+console.log("------------ Devserver Host/Port --------------- ", devserverHost, ' / ', devserverPort, ' / ', isDevMode, "-----------")
 const ASSET_BASE_URL = process.env.ASSET_BASE_URL || '';
 
 const output = {
@@ -174,7 +176,7 @@ if (isDevMode) {
   // otherwise the websocket client will initialize twice, creating two sockets.
   // Ref: https://github.com/gaearon/react-hot-loader/issues/141
   PREAMBLE.unshift(
-    `webpack-dev-server/client?http://localhost:${devserverPort}`,
+    `webpack-dev-server/client?http://${devserverHost}:${devserverPort}`,
   );
 }
 
@@ -479,6 +481,7 @@ if (isDevMode) {
     },
     historyApiFallback: true,
     hot: true,
+    host: devserverHost,
     port: devserverPort,
     // Only serves bundled files from webpack-dev-server
     // and proxy everything else to Superset backend
@@ -508,4 +511,5 @@ const smp = new SpeedMeasurePlugin({
   disable: !measure,
 });
 
+// console.log("--------------------------- Config:", config, "-----------")
 module.exports = smp.wrap(config);
