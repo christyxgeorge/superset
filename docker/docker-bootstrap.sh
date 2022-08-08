@@ -41,6 +41,13 @@ if [[ "${1}" == "worker" ]]; then
 elif [[ "${1}" == "beat" ]]; then
   echo "Starting Celery beat..."
   celery --app=superset.tasks.celery_app:app beat --pidfile /tmp/celerybeat.pid -l INFO -s "${SUPERSET_HOME}"/celerybeat-schedule
+elif [[ "${1}" == "workerbeat" ]]; then
+  echo "Starting Celery worker (along with Celery beat)..."
+  # mkdir -p /var/run/celery /var/log/celery
+  # chown -R nobody:nogroup /app/superset_home/celerybeat-schedule ### Only needed when we add
+  celery --app=superset.tasks.celery_app:app worker -Ofair -l INFO \
+    --uid=superset --gid=superset \
+    -B -s "${SUPERSET_HOME}"/celerybeat-schedule
 elif [[ "${1}" == "app" ]]; then
   echo "Starting web app..."
   flask run -p 8088 --with-threads --reload --debugger --host=0.0.0.0
