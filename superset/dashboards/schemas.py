@@ -27,6 +27,7 @@ from superset.utils import core as utils
 get_delete_ids_schema = {"type": "array", "items": {"type": "integer"}}
 get_export_ids_schema = {"type": "array", "items": {"type": "integer"}}
 get_fav_star_ids_schema = {"type": "array", "items": {"type": "integer"}}
+get_tag_info_schema = {"type": "array", "items": {"type": "integer"}}
 thumbnail_query_schema = {
     "type": "object",
     "properties": {"force": {"type": "boolean"}},
@@ -296,6 +297,19 @@ class GetFavStarIdsSchema(Schema):
     result = fields.List(
         fields.Nested(ChartFavStarResponseResult),
         description="A list of results for each corresponding chart in the request",
+    )
+
+
+class DashboardTagInfoResponseResult(Schema):
+    id = fields.Integer(description="The Dashboard id")
+    favorite_status = fields.Boolean(description="The FaveStar value")
+    tags = fields.List(fields.String(), required=True, description="Custom Tags for the dashboard")
+
+
+class DashboardTagInfoSchema(Schema):
+    result = fields.List(
+        fields.Nested(DashboardTagInfoResponseResult),
+        description="A list of results for each corresponding dashboard in the request",
     )
 
 

@@ -17,6 +17,7 @@
 import json
 import logging
 from datetime import datetime
+from functools import reduce
 from typing import Any, Dict, List, Optional, Union
 
 from sqlalchemy.exc import SQLAlchemyError
@@ -29,6 +30,7 @@ from superset.extensions import db
 from superset.models.core import FavStar, FavStarClassName
 from superset.models.dashboard import Dashboard
 from superset.models.slice import Slice
+from superset.models.tags import Tag, TaggedObject, ObjectTypes, TagTypes
 from superset.utils.core import get_user_id
 from superset.utils.dashboard_filter_scopes_converter import copy_filter_scopes
 
@@ -286,3 +288,20 @@ class DashboardDAO(BaseDAO):
             )
             .all()
         ]
+
+    @staticmethod
+    def dashboard_tags(dashboards: List[Dashboard]) -> List[Any]:
+        ids = [dash.id for dash in dashboards]
+        dashboard_tags = [
+            (tobject.object_id, tobject.tag.name)
+            for tobject in db.session.query(TaggedObject)
+            .filter(
+                TaggedObject.object_type == ObjectTypes.dashboard,
+                TaggedObject.object_id.in_(ids),
+            )
+            .all()
+            if tobject.tag.type == TagTypes.custom
+        ]
+        return reduce(
+            lambda d, dt: d.setdefault(dt[0], []).append(dt[1]) or d, dashboard_tags, {}
+        )

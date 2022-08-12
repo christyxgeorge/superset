@@ -73,7 +73,9 @@ from superset.dashboards.schemas import (
     get_delete_ids_schema,
     get_export_ids_schema,
     get_fav_star_ids_schema,
+    get_tag_info_schema,
     GetFavStarIdsSchema,
+    DashboardTagInfoSchema,
     openapi_spec_methods_override,
     thumbnail_query_schema,
 )
@@ -133,6 +135,7 @@ class DashboardRestApi(BaseSupersetModelRestApi):
         RouteMethod.IMPORT,
         RouteMethod.RELATED,
         "bulk_delete",  # not using RouteMethod since locally defined
+        "tag_info",     # Added to customize response
         "favorite_status",
         "get_charts",
         "get_datasets",
@@ -261,6 +264,7 @@ class DashboardRestApi(BaseSupersetModelRestApi):
         "get_export_ids_schema": get_export_ids_schema,
         "thumbnail_query_schema": thumbnail_query_schema,
         "get_fav_star_ids_schema": get_fav_star_ids_schema,
+        "get_tag_info_schema": get_tag_info_schema,
     }
     openapi_spec_methods = openapi_spec_methods_override
     """ Overrides GET methods OpenApi descriptions """
@@ -957,6 +961,61 @@ class DashboardRestApi(BaseSupersetModelRestApi):
         favorited_dashboard_ids = DashboardDAO.favorited_ids(dashboards)
         res = [
             {"id": request_id, "value": request_id in favorited_dashboard_ids}
+            for request_id in requested_ids
+        ]
+        return self.response(200, result=res)
+
+    @expose("/tag_info/", methods=["GET"])
+    @protect()
+    @safe
+    @statsd_metrics
+    @rison(get_tag_info_schema)
+    @event_logger.log_this_with_context(
+        action=lambda self, *args, **kwargs: f"{self.__class__.__name__}"
+        f".tag_info",
+        log_to_statsd=False,
+    )
+    def tag_info(self, **kwargs: Any) -> Response:
+        """Favorite Stars, Tagging Info for Dashboards
+        ---
+        get:
+          description: >-
+            Check favorited dashboards and dashboard tags for current user
+          parameters:
+          - in: query
+            name: q
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/get_tag_info_schema'
+          responses:
+            200:
+              description:
+              content:
+                application/json:
+                  schema:
+                    $ref: "#/components/schemas/DashboardTagInfoSchema"
+            400:
+              $ref: '#/components/responses/400'
+            401:
+              $ref: '#/components/responses/401'
+            404:
+              $ref: '#/components/responses/404'
+            500:
+              $ref: '#/components/responses/500'
+        """
+        requested_ids = kwargs["rison"]
+        dashboards = DashboardDAO.find_by_ids(requested_ids)
+        if not dashboards:
+            return self.response_404()
+
+        favorited_dashboard_ids = DashboardDAO.favorited_ids(dashboards)
+        dashboard_tags = DashboardDAO.dashboard_tags(dashboards)
+        res = [{
+                "id": request_id,
+                "favorite_status": request_id in favorited_dashboard_ids,
+                "tags": dashboard_tags.get(request_id, []),
+            }
             for request_id in requested_ids
         ]
         return self.response(200, result=res)
