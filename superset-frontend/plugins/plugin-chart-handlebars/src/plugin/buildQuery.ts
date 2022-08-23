@@ -16,16 +16,19 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import { buildQueryContext, QueryFormData } from '@superset-ui/core';
+import {
+  buildQueryContext,
+  normalizeOrderBy,
+  QueryFormData,
+} from '@superset-ui/core';
 
 export default function buildQuery(formData: QueryFormData) {
-  const { timeseries_limit_metric: sort_by_metric, groupby } = formData;
-  const order_desc = 'order_desc' in formData ? formData.order_desc : true;
+  const { groupby } = formData;
 
   return buildQueryContext(formData, baseQueryObject => [
     {
       ...baseQueryObject,
-      ...(sort_by_metric && { orderby: [[sort_by_metric, !order_desc]] }),
+      orderby: normalizeOrderBy(baseQueryObject).orderby,
       ...(groupby && { groupby }),
     },
   ]);
