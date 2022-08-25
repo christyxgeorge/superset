@@ -53,7 +53,7 @@ const {
 } = parsedArgs;
 const isDevMode = mode !== 'production';
 const isDevServer = process.argv[1].includes('webpack-dev-server');
-console.log("------------ Devserver Host/Port --------------- ", devserverHost, ' / ', devserverPort, ' / ', isDevMode, "-----------")
+console.log('------------ Devserver Host/Port --------------- ', devserverHost, ' / ', devserverPort, ' / ', isDevMode, '-----------')
 const ASSET_BASE_URL = process.env.ASSET_BASE_URL || '';
 
 const output = {
