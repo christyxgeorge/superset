@@ -303,7 +303,10 @@ class GetFavStarIdsSchema(Schema):
 class DashboardTagInfoResponseResult(Schema):
     id = fields.Integer(description="The Dashboard id")
     favorite_status = fields.Boolean(description="The FaveStar value")
-    tags = fields.List(fields.String(), required=True, description="Custom Tags for the dashboard")
+    tags = fields.List(
+        fields.String(), required=True,
+        description="Custom Tags for the dashboard"
+    )
 
 
 class DashboardTagInfoSchema(Schema):

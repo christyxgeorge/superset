@@ -30,7 +30,7 @@ from superset.extensions import db
 from superset.models.core import FavStar, FavStarClassName
 from superset.models.dashboard import Dashboard
 from superset.models.slice import Slice
-from superset.models.tags import Tag, TaggedObject, ObjectTypes, TagTypes
+from superset.models.tags import TaggedObject, ObjectTypes, TagTypes
 from superset.utils.core import get_user_id
 from superset.utils.dashboard_filter_scopes_converter import copy_filter_scopes
 

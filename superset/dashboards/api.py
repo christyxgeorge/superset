@@ -257,6 +257,7 @@ class DashboardRestApi(BaseSupersetModelRestApi):
         DashboardGetResponseSchema,
         DashboardDatasetSchema,
         GetFavStarIdsSchema,
+        DashboardTagInfoSchema,
         EmbeddedDashboardResponseSchema,
     )
     apispec_parameter_schemas = {
