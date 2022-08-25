@@ -60,8 +60,8 @@ console.log(
   devserverPort,
   ' / ',
   isDevMode,
-  '-----------'
-)
+  '-----------',
+);
 const ASSET_BASE_URL = process.env.ASSET_BASE_URL || '';
 
 const output = {
