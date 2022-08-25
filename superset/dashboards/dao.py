@@ -290,7 +290,7 @@ class DashboardDAO(BaseDAO):
         ]
 
     @staticmethod
-    def dashboard_tags(dashboards: List[Dashboard]) -> List[Any]:
+    def dashboard_tags(dashboards: List[Dashboard]) -> Dict[int, str]:
         ids = [dash.id for dash in dashboards]
         dashboard_tags = [
             (tobject.object_id, tobject.tag.name)
