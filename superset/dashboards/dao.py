@@ -303,7 +303,7 @@ class DashboardDAO(BaseDAO):
             if tobject.tag.type == TagTypes.custom
         ]
         return reduce(
-            lambda d, dt: d.setdefault(dt[0], []).append(dt[1]) or d,
+            lambda d, dt: d.setdefault(dt[0], []).append(dt[1]) or d,  # type: ignore
             dashboard_tags,
-            {},  # type: ignore
+            {},
         )
