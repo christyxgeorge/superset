@@ -68,6 +68,7 @@ from superset.dashboards.schemas import (
     DashboardGetResponseSchema,
     DashboardPostSchema,
     DashboardPutSchema,
+    DashboardTagInfoSchema,
     EmbeddedDashboardConfigSchema,
     EmbeddedDashboardResponseSchema,
     get_delete_ids_schema,
@@ -75,7 +76,6 @@ from superset.dashboards.schemas import (
     get_fav_star_ids_schema,
     get_tag_info_schema,
     GetFavStarIdsSchema,
-    DashboardTagInfoSchema,
     openapi_spec_methods_override,
     thumbnail_query_schema,
 )
@@ -135,7 +135,7 @@ class DashboardRestApi(BaseSupersetModelRestApi):
         RouteMethod.IMPORT,
         RouteMethod.RELATED,
         "bulk_delete",  # not using RouteMethod since locally defined
-        "tag_info",     # Added to customize response
+        "tag_info",  # Added to customize response
         "favorite_status",
         "get_charts",
         "get_datasets",
@@ -972,8 +972,7 @@ class DashboardRestApi(BaseSupersetModelRestApi):
     @statsd_metrics
     @rison(get_tag_info_schema)
     @event_logger.log_this_with_context(
-        action=lambda self, *args, **kwargs: f"{self.__class__.__name__}"
-        f".tag_info",
+        action=lambda self, *args, **kwargs: f"{self.__class__.__name__}" f".tag_info",
         log_to_statsd=False,
     )
     def tag_info(self, **kwargs: Any) -> Response:
@@ -1012,7 +1011,8 @@ class DashboardRestApi(BaseSupersetModelRestApi):
 
         favorited_dashboard_ids = DashboardDAO.favorited_ids(dashboards)
         dashboard_tags = DashboardDAO.dashboard_tags(dashboards)
-        res = [{
+        res = [
+            {
                 "id": request_id,
                 "favorite_status": request_id in favorited_dashboard_ids,
                 "tags": dashboard_tags.get(request_id, []),

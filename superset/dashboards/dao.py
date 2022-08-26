@@ -30,7 +30,7 @@ from superset.extensions import db
 from superset.models.core import FavStar, FavStarClassName
 from superset.models.dashboard import Dashboard
 from superset.models.slice import Slice
-from superset.models.tags import TaggedObject, ObjectTypes, TagTypes
+from superset.models.tags import ObjectTypes, TaggedObject, TagTypes
 from superset.utils.core import get_user_id
 from superset.utils.dashboard_filter_scopes_converter import copy_filter_scopes
 
@@ -303,5 +303,5 @@ class DashboardDAO(BaseDAO):
             if tobject.tag.type == TagTypes.custom
         ]
         return reduce(
-            lambda d, dt: d.setdefault(dt[0], []).append(dt[1]) or d, dashboard_tags, {} # type: ignore
+            lambda d, dt: d.setdefault(dt[0], []).append(dt[1]) or d, dashboard_tags, {}  # type: ignore
         )
