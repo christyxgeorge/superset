@@ -89,6 +89,10 @@ scripts/*.zip
 venv
 @eaDir/
 
+# VSCode
+.history
+
+
 # PyCharm
 .run
 
