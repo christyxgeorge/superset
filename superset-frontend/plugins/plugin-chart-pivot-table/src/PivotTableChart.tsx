@@ -380,6 +380,7 @@ export default function PivotTableChart(props: PivotTableProps) {
               filters.push({
                 col,
                 op: '==',
+                // @ts-ignore
                 val,
                 formattedVal,
               });
@@ -394,6 +395,7 @@ export default function PivotTableChart(props: PivotTableProps) {
             filters.push({
               col,
               op: '==',
+              // @ts-ignore
               val,
               formattedVal,
             });
