@@ -74,8 +74,8 @@ export default class EchartsTimeseriesLineChartPlugin extends ChartPlugin<
           AnnotationType.Timeseries,
         ],
         name: isFeatureEnabled(FeatureFlag.GENERIC_CHART_AXES)
-          ? t('Line Chart')
-          : t('Time-series Line Chart'),
+          ? t('Line Chart v2')
+          : t('Time-series Line Chart v2'),
         tags: [
           t('ECharts'),
           t('Predictive'),
