@@ -21,4 +21,4 @@ declare module '*.png' {
   export default value;
 }
 
-declare module 'just-handlebars-helpers';
+// declare module 'just-handlebars-helpers';
