@@ -50,6 +50,7 @@ from superset.charts.dao import ChartDAO
 from superset.charts.filters import (
     ChartAllTextFilter,
     ChartCertifiedFilter,
+    ChartDashboardFilter,
     ChartFavoriteFilter,
     ChartFilter,
     ChartHasCreatedByFilter,
@@ -118,7 +119,6 @@ class ChartRestApi(BaseSupersetModelRestApi):
         "changed_on_delta_humanized",
         "dashboards.dashboard_title",
         "dashboards.id",
-        "dashboards.json_metadata",
         "description",
         "id",
         "owners.first_name",
@@ -148,6 +148,8 @@ class ChartRestApi(BaseSupersetModelRestApi):
         "created_by.first_name",
         "created_by.id",
         "created_by.last_name",
+        "dashboards.id",
+        "dashboards.dashboard_title",
         "datasource_id",
         "datasource_name_text",
         "datasource_type",
@@ -198,6 +200,7 @@ class ChartRestApi(BaseSupersetModelRestApi):
         "description",
         "id",
         "owners",
+        "dashboards",
         "slice_name",
         "viz_type",
     ]
@@ -207,6 +210,7 @@ class ChartRestApi(BaseSupersetModelRestApi):
         "id": [ChartFavoriteFilter, ChartCertifiedFilter],
         "slice_name": [ChartAllTextFilter],
         "created_by": [ChartHasCreatedByFilter],
+        "dashboards": [ChartDashboardFilter],
     }
 
     # Will just affect _info endpoint

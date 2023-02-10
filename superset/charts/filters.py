@@ -15,8 +15,10 @@
 # specific language governing permissions and limitations
 # under the License.
 from typing import Any
+import logging
 
 from flask_babel import lazy_gettext as _
+from flask_appbuilder.models.sqla.filters import get_field_setup_query, FilterRelationManyToManyEqual
 from sqlalchemy import and_, or_
 from sqlalchemy.orm.query import Query
 
@@ -26,6 +28,8 @@ from superset.connectors.sqla.models import SqlaTable
 from superset.models.slice import Slice
 from superset.views.base import BaseFilter
 from superset.views.base_api import BaseFavoriteFilter
+
+logger = logging.getLogger(__name__)
 
 
 class ChartAllTextFilter(BaseFilter):  # pylint: disable=too-few-public-methods
@@ -108,4 +112,54 @@ class ChartHasCreatedByFilter(BaseFilter):  # pylint: disable=too-few-public-met
             return query.filter(and_(Slice.created_by_fk.isnot(None)))
         if value is False:
             return query.filter(and_(Slice.created_by_fk.is_(None)))
+        return query
+
+
+class ChartDashboardFilter(FilterRelationManyToManyEqual):  # pylint: disable=too-few-public-methods
+    """
+    Custom filter for the GET list that filters all charts for a specified Dashboard
+    If filter value is -1, then we filter all charts not assigned to any dashboard
+    """
+
+    name = _("Is in Dashboard")
+    arg_name = "chart_is_in_dashboard"
+
+    def apply_no_dashboard(self, query: Query, field, value: int) -> Query:
+        """
+        Get object by column_name and value_item, then apply filter if object exists
+        Query with new filter applied
+        """
+        try:
+            return query.filter(field == None)
+        except SQLAlchemyError as exc:
+            logger.warning(
+                "Filter exception for %s with value %s, will not apply",
+                field,
+                value,
+            )
+            return query
+
+
+    def apply_item(self, query: Query, field: Any, value: int) -> Query:
+        """
+        If the value is -1, then we select all charts assigned to no dashboards
+        Else, we select all charts which are assigned to specifed dashboard_id (value)
+        """
+        if value == -1:
+            query = self.apply_no_dashboard(query, field, value)
+        else:
+            query = super().apply_item(query, field, value)
+        return query
+
+
+    def apply(self, query: Query, value: Any) -> Query:
+        if not value:
+            return query
+
+        query, field = get_field_setup_query(query, self.model, self.column_name)
+        if isinstance(value, list):
+            for value_item in value:
+                query = self.apply_item(query, field, value_item)
+        else:
+            query = self.apply_item(query, field, value)
         return query

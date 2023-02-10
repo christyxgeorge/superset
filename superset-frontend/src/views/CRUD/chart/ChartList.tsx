@@ -60,6 +60,7 @@ import Icons from 'src/components/Icons';
 import { nativeFilterGate } from 'src/dashboard/components/nativeFilters/utils';
 import setupPlugins from 'src/setup/setupPlugins';
 import InfoTooltip from 'src/components/InfoTooltip';
+import CountTooltip from 'src/components/CountTooltip';
 import CertifiedBadge from 'src/components/CertifiedBadge';
 import { GenericLink } from 'src/components/GenericLink/GenericLink';
 import ChartCard from './ChartCard';
@@ -107,7 +108,7 @@ const createFetchDatasets = async (
     ? { filters: [{ col: 'table_name', opr: 'sw', value: filterValue }] }
     : {};
   const queryParams = rison.encode({
-    columns: ['datasource_name', 'datasource_id'],
+    columns: ['table_name', 'id'],
     keys: ['none'],
     order_column: 'table_name',
     order_direction: 'asc',
@@ -129,6 +130,51 @@ const createFetchDatasets = async (
 
   return {
     data: uniqBy<SelectOption>(datasets, 'value'),
+    totalCount: json?.count,
+  };
+};
+
+const createFetchDashboards = async (
+  filterValue = '',
+  page: number,
+  pageSize: number,
+) => {
+  // add filters if filterValue
+  const filters = filterValue
+    ? { filters: [{ col: 'dashboard_title', opr: 'sw', value: filterValue }] }
+    : {};
+  const queryParams = rison.encode({
+    columns: ['dashboard_title', 'id'],
+    keys: ['none'],
+    order_column: 'dashboard_title',
+    order_direction: 'asc',
+    page,
+    page_size: pageSize,
+    ...filters,
+  });
+
+  const { json = {} } = await SupersetClient.get({
+    endpoint: `/api/v1/dashboard/?q=${queryParams}`,
+  });
+
+  const mappedDashboards = json?.result?.map(
+    ({ dashboard_title: dashboardTitle, id }: { dashboard_title: string; id: number }) => ({
+      label: dashboardTitle,
+      value: id,
+    }),
+  );
+
+  // Add the 'No Dashboard Option' (Only on the first page)
+  if (mappedDashboards && page == 0) {
+    const dashboards = [{ label: '* No Dashboards *', value: -1 }, ...mappedDashboards];
+    return {
+      data: uniqBy<SelectOption>(dashboards, 'value'),
+      totalCount: json?.count + 1,
+    };
+  }
+  // Return the reformatted API results!
+  return {
+    data: uniqBy<SelectOption>(mappedDashboards, 'value'),
     totalCount: json?.count,
   };
 };
@@ -302,6 +348,24 @@ function ChartList(props: ChartListProps) {
         Header: t('Visualization type'),
         accessor: 'viz_type',
         size: 'xxl',
+      },
+      {
+        Cell: ({
+          row: {
+            original: {
+              dashboards,
+            },
+          },
+        }: any) => {
+          const items = dashboards.map(d => {
+            return { id: d.id, name: d.dashboard_title };
+          });
+          return <CountTooltip label="Dashboards" items={items} countColor="#4ea5c5" viewBox="0 -1 24 24" />
+        },
+        Header: '',
+        accessor: 'dashboards',
+        disableSortBy: true,
+        size: 'xxs',
       },
       {
         Cell: ({
@@ -552,6 +616,15 @@ function ChartList(props: ChartListProps) {
 
             return 0;
           }),
+      },
+      {
+        Header: t('Dashboard'),
+        id: 'dashboards',
+        input: 'select',
+        operator: FilterOperator.chartIsInDashboard,
+        unfilteredLabel: t('All'),
+        fetchSelects: createFetchDashboards,
+        paginate: true,
       },
       {
         Header: t('Dataset'),
