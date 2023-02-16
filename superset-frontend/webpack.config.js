@@ -85,7 +85,7 @@ if (!isDevMode) {
 
 const plugins = [
   new webpack.ProvidePlugin({
-    process: 'process/browser',
+    process: 'process/browser.js',
   }),
 
   // creates a manifest.json mapping of name to hashed output used in template files
@@ -118,7 +118,7 @@ const plugins = [
         entrypoints: entryFiles,
       };
     },
-    // Also write maniafest.json to disk when running `npm run dev`.
+    // Also write manifest.json to disk when running `npm run dev`.
     // This is required for Flask to work.
     writeToFileEmit: isDevMode && !isDevServer,
   }),
@@ -299,6 +299,9 @@ const config = {
       //  AntD version conflict has been resolved
       antd: path.resolve(path.join(APP_DIR, './node_modules/antd')),
       react: path.resolve(path.join(APP_DIR, './node_modules/react')),
+      // TODO: remove Handlebars alias once Handlebars NPM package has been updated to
+      // correctly support webpack import (https://github.com/handlebars-lang/handlebars.js/issues/953)
+      handlebars: 'handlebars/dist/handlebars.js',
     },
     extensions: ['.ts', '.tsx', '.js', '.jsx', '.yml'],
     fallback: {
@@ -332,7 +335,7 @@ const config = {
               transpileOnly: true,
               // must override compiler options here, even though we have set
               // the same options in `tsconfig.json`, because they may still
-              // be overriden by `tsconfig.json` in node_modules subdirectories.
+              // be overridden by `tsconfig.json` in node_modules subdirectories.
               compilerOptions: {
                 esModuleInterop: false,
                 importHelpers: false,
@@ -394,6 +397,9 @@ const config = {
               sourceMap: true,
               lessOptions: {
                 javascriptEnabled: true,
+                modifyVars: {
+                  'root-entry-name': 'default',
+                },
               },
             },
           },
@@ -454,7 +460,7 @@ const config = {
         type: 'asset/resource',
       },
       {
-        test: /\.(stories|story)\.mdx$/,
+        test: /\.mdx$/,
         use: [
           {
             loader: 'babel-loader',

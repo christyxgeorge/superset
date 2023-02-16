@@ -22,16 +22,14 @@ import React, {
   useState,
   useMemo,
   useCallback,
-  useEffect,
 } from 'react';
+import { useHistory } from 'react-router-dom';
 import rison from 'rison';
-import { useHistory, useLocation } from 'react-router-dom';
 import {
   createFetchRelated,
   createFetchDistinct,
   createErrorHandler,
 } from 'src/views/CRUD/utils';
-import { getItem, LocalStorageKeys } from 'src/utils/localStorageHelpers';
 import { ColumnObject } from 'src/views/CRUD/data/dataset/types';
 import { useListViewResource } from 'src/views/CRUD/hooks';
 import ConfirmStatusChange from 'src/components/ConfirmStatusChange';
@@ -48,7 +46,6 @@ import SubMenu, {
   SubMenuProps,
   ButtonProps,
 } from 'src/views/components/SubMenu';
-import { commonMenuData } from 'src/views/CRUD/data/common';
 import Owner from 'src/types/Owner';
 import withToasts from 'src/components/MessageToasts/withToasts';
 import { Tooltip } from 'src/components/Tooltip';
@@ -61,7 +58,6 @@ import { isFeatureEnabled, FeatureFlag } from 'src/featureFlags';
 import WarningIconWithTooltip from 'src/components/WarningIconWithTooltip';
 import { isUserAdmin } from 'src/dashboard/util/permissionUtils';
 import { GenericLink } from 'src/components/GenericLink/GenericLink';
-import AddDatasetModal from './AddDatasetModal';
 
 import {
   PAGE_SIZE,
@@ -140,6 +136,7 @@ const DatasetList: FunctionComponent<DatasetListProps> = ({
   addSuccessToast,
   user,
 }) => {
+  const history = useHistory();
   const {
     state: {
       loading,
@@ -152,9 +149,6 @@ const DatasetList: FunctionComponent<DatasetListProps> = ({
     toggleBulkSelect,
     refreshData,
   } = useListViewResource<Dataset>('dataset', t('dataset'), addDangerToast);
-
-  const [datasetAddModalOpen, setDatasetAddModalOpen] =
-    useState<boolean>(false);
 
   const [datasetCurrentlyDeleting, setDatasetCurrentlyDeleting] = useState<
     (Dataset & { chart_count: number; dashboard_count: number }) | null
@@ -192,12 +186,6 @@ const DatasetList: FunctionComponent<DatasetListProps> = ({
     hasPerm('can_export') && isFeatureEnabled(FeatureFlag.VERSIONED_EXPORT);
 
   const initialSort = SORT_BY;
-  useEffect(() => {
-    const db = getItem(LocalStorageKeys.db, null);
-    if (!loading && db) {
-      setDatasetAddModalOpen(true);
-    }
-  }, [loading]);
 
   const openDatasetEditModal = useCallback(
     ({ id }: Dataset) => {
@@ -344,7 +332,7 @@ const DatasetList: FunctionComponent<DatasetListProps> = ({
           row: {
             original: { kind },
           },
-        }: any) => kind[0]?.toUpperCase() + kind.slice(1),
+        }: any) => (kind === 'physical' ? t('Physical') : t('Virtual')),
         Header: t('Type'),
         accessor: 'kind',
         disableSortBy: true,
@@ -503,6 +491,7 @@ const DatasetList: FunctionComponent<DatasetListProps> = ({
     () => [
       {
         Header: t('Owner'),
+        key: 'owner',
         id: 'owners',
         input: 'select',
         operator: FilterOperator.relationManyMany,
@@ -522,6 +511,7 @@ const DatasetList: FunctionComponent<DatasetListProps> = ({
       },
       {
         Header: t('Database'),
+        key: 'database',
         id: 'database',
         input: 'select',
         operator: FilterOperator.relationOneMany,
@@ -537,6 +527,7 @@ const DatasetList: FunctionComponent<DatasetListProps> = ({
       },
       {
         Header: t('Schema'),
+        key: 'schema',
         id: 'schema',
         input: 'select',
         operator: FilterOperator.equals,
@@ -552,17 +543,19 @@ const DatasetList: FunctionComponent<DatasetListProps> = ({
       },
       {
         Header: t('Type'),
+        key: 'sql',
         id: 'sql',
         input: 'select',
         operator: FilterOperator.datasetIsNullOrEmpty,
         unfilteredLabel: 'All',
         selects: [
-          { label: 'Virtual', value: false },
-          { label: 'Physical', value: true },
+          { label: t('Virtual'), value: false },
+          { label: t('Physical'), value: true },
         ],
       },
       {
         Header: t('Certified'),
+        key: 'certified',
         id: 'id',
         urlDisplay: 'certified',
         input: 'select',
@@ -575,6 +568,7 @@ const DatasetList: FunctionComponent<DatasetListProps> = ({
       },
       {
         Header: t('Search'),
+        key: 'search',
         id: 'table_name',
         input: 'search',
         operator: FilterOperator.contains,
@@ -585,7 +579,7 @@ const DatasetList: FunctionComponent<DatasetListProps> = ({
 
   const menuData: SubMenuProps = {
     activeChild: 'Datasets',
-    ...commonMenuData,
+    name: t('Datasets'),
   };
 
   const buttonArr: Array<ButtonProps> = [];
@@ -598,26 +592,6 @@ const DatasetList: FunctionComponent<DatasetListProps> = ({
     });
   }
 
-  const CREATE_HASH = '#create';
-  const location = useLocation();
-  const history = useHistory();
-
-  //  Sync Dataset Add modal with #create hash
-  useEffect(() => {
-    const modalOpen = location.hash === CREATE_HASH && canCreate;
-    setDatasetAddModalOpen(modalOpen);
-  }, [canCreate, location.hash]);
-
-  //  Add #create hash
-  const openDatasetAddModal = useCallback(() => {
-    history.replace(`${location.pathname}${location.search}${CREATE_HASH}`);
-  }, [history, location.pathname, location.search]);
-
-  //  Remove #create hash
-  const closeDatasetAddModal = useCallback(() => {
-    history.replace(`${location.pathname}${location.search}`);
-  }, [history, location.pathname, location.search]);
-
   if (canCreate) {
     buttonArr.push({
       name: (
@@ -625,7 +599,9 @@ const DatasetList: FunctionComponent<DatasetListProps> = ({
           <i className="fa fa-plus" /> {t('Dataset')}{' '}
         </>
       ),
-      onClick: openDatasetAddModal,
+      onClick: () => {
+        history.push('/dataset/add/');
+      },
       buttonStyle: 'primary',
     });
 
@@ -702,7 +678,7 @@ const DatasetList: FunctionComponent<DatasetListProps> = ({
 
     SupersetClient.post({
       endpoint: `/api/v1/dataset/duplicate`,
-      postPayload: {
+      jsonPayload: {
         base_model_id: datasetCurrentlyDuplicating?.id,
         table_name: newDatasetName,
       },
@@ -722,11 +698,6 @@ const DatasetList: FunctionComponent<DatasetListProps> = ({
   return (
     <>
       <SubMenu {...menuData} />
-      <AddDatasetModal
-        show={datasetAddModalOpen}
-        onHide={closeDatasetAddModal}
-        onDatasetAdd={refreshData}
-      />
       {datasetCurrentlyDeleting && (
         <DeleteModal
           description={t(

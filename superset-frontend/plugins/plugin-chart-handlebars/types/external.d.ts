@@ -20,5 +20,10 @@ declare module '*.png' {
   const value: any;
   export default value;
 }
+<<<<<<< HEAD
 
 // declare module 'just-handlebars-helpers';
+=======
+declare module '*.jpg';
+declare module 'just-handlebars-helpers';
+>>>>>>> upstream/master

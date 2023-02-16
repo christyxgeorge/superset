@@ -16,21 +16,29 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import React from 'react';
+import React, { useReducer, Reducer, useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { useDatasetsList } from 'src/views/CRUD/data/hooks';
 import Header from './Header';
+import EditPage from './EditDataset';
 import DatasetPanel from './DatasetPanel';
 import LeftPanel from './LeftPanel';
 import Footer from './Footer';
 import { DatasetActionType, DatasetObject, DSReducerActionType } from './types';
 import DatasetLayout from '../DatasetLayout';
 
+type Schema = {
+  schema: string;
+};
+
 export function datasetReducer(
-  state: Partial<DatasetObject> | null,
+  state: DatasetObject | null,
   action: DSReducerActionType,
-): Partial<DatasetObject> | null {
+): Partial<DatasetObject> | Schema | null {
   const trimmedState = {
     ...(state || {}),
   };
+
   switch (action.type) {
     case DatasetActionType.selectDatabase:
       return {
@@ -42,13 +50,13 @@ export function datasetReducer(
     case DatasetActionType.selectSchema:
       return {
         ...trimmedState,
-        ...action.payload,
+        [action.payload.name]: action.payload.value,
         table_name: null,
       };
     case DatasetActionType.selectTable:
       return {
         ...trimmedState,
-        ...action.payload,
+        [action.payload.name]: action.payload.value,
       };
     case DatasetActionType.changeDataset:
       return {
@@ -60,19 +68,69 @@ export function datasetReducer(
   }
 }
 
+const prevUrl =
+  '/tablemodelview/list/?pageIndex=0&sortColumn=changed_on_delta_humanized&sortOrder=desc';
+
 export default function AddDataset() {
-  // this is commented out for now, but can be commented in as the component
-  // is built up. Uncomment the useReducer in imports too
-  // const [dataset, setDataset] = useReducer<
-  //   Reducer<Partial<DatasetObject> | null, DSReducerActionType>
-  // >(datasetReducer, null);
+  const [dataset, setDataset] = useReducer<
+    Reducer<Partial<DatasetObject> | null, DSReducerActionType>
+  >(datasetReducer, null);
+  const [hasColumns, setHasColumns] = useState(false);
+  const [editPageIsVisible, setEditPageIsVisible] = useState(false);
+
+  const { datasets, datasetNames } = useDatasetsList(
+    dataset?.db,
+    dataset?.schema,
+  );
+
+  const { datasetId: id } = useParams<{ datasetId: string }>();
+  useEffect(() => {
+    if (!Number.isNaN(parseInt(id, 10))) {
+      setEditPageIsVisible(true);
+    }
+  }, [id]);
+
+  const HeaderComponent = () => (
+    <Header setDataset={setDataset} title={dataset?.table_name} />
+  );
+
+  const LeftPanelComponent = () => (
+    <LeftPanel
+      setDataset={setDataset}
+      dataset={dataset}
+      datasetNames={datasetNames}
+    />
+  );
+
+  const EditPageComponent = () => <EditPage id={id} />;
+
+  const DatasetPanelComponent = () => (
+    <DatasetPanel
+      tableName={dataset?.table_name}
+      dbId={dataset?.db?.id}
+      schema={dataset?.schema}
+      setHasColumns={setHasColumns}
+      datasets={datasets}
+    />
+  );
+
+  const FooterComponent = () => (
+    <Footer
+      url={prevUrl}
+      datasetObject={dataset}
+      hasColumns={hasColumns}
+      datasets={datasetNames}
+    />
+  );
 
   return (
     <DatasetLayout
-      header={Header()}
-      leftPanel={LeftPanel()}
-      datasetPanel={DatasetPanel()}
-      footer={Footer()}
+      header={HeaderComponent()}
+      leftPanel={editPageIsVisible ? null : LeftPanelComponent()}
+      datasetPanel={
+        editPageIsVisible ? EditPageComponent() : DatasetPanelComponent()
+      }
+      footer={FooterComponent()}
     />
   );
 }

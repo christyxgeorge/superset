@@ -53,7 +53,8 @@ import Button from 'src/components/Button';
 import ViewQueryModal from 'src/explore/components/controls/ViewQueryModal';
 import { ResultsPaneOnDashboard } from 'src/explore/components/DataTablesPane';
 import Modal from 'src/components/Modal';
-import DrillDetailPane from 'src/dashboard/components/DrillDetailPane';
+import { DrillDetailMenuItems } from 'src/components/Chart/DrillDetail';
+import { LOG_ACTIONS_CHART_DOWNLOAD_AS_IMAGE } from 'src/logger/LogUtils';
 
 const appContainer = document.getElementById('app');
 const bootstrapData = JSON.parse(
@@ -80,12 +81,20 @@ const MENU_KEYS = {
   DRILL_TO_DETAIL: 'drill_to_detail',
 };
 
+// TODO: replace 3 dots with an icon
 const VerticalDotsContainer = styled.div`
   padding: ${({ theme }) => theme.gridUnit / 4}px
     ${({ theme }) => theme.gridUnit * 1.5}px;
 
   .dot {
     display: block;
+
+    height: ${({ theme }) => theme.gridUnit}px;
+    width: ${({ theme }) => theme.gridUnit}px;
+    border-radius: 50%;
+    margin: ${({ theme }) => theme.gridUnit / 2}px 0;
+
+    background-color: ${({ theme }) => theme.colors.text.label};
   }
 
   &:hover {
@@ -122,7 +131,6 @@ export interface SliceHeaderControlsProps {
     slice_name: string;
     slice_id: number;
     slice_description: string;
-    form_data?: { emit_filter?: boolean };
     datasource: string;
   };
 
@@ -140,6 +148,7 @@ export interface SliceHeaderControlsProps {
 
   forceRefresh: (sliceId: number, dashboardId: number) => void;
   logExploreChart?: (sliceId: number) => void;
+  logEvent?: (eventName: string, eventData?: object) => void;
   toggleExpandSlice?: (sliceId: number) => void;
   exportCSV?: (sliceId: number) => void;
   exportFullCSV?: (sliceId: number) => void;
@@ -152,6 +161,8 @@ export interface SliceHeaderControlsProps {
   supersetCanShare?: boolean;
   supersetCanCSV?: boolean;
   sliceCanEdit?: boolean;
+
+  crossFiltersEnabled?: boolean;
 }
 type SliceHeaderControlsPropsWithRouter = SliceHeaderControlsProps &
   RouteComponentProps;
@@ -167,7 +178,7 @@ const dropdownIconsStyles = css`
   }
 `;
 
-const DashboardChartModalTrigger = ({
+const ViewResultsModalTrigger = ({
   exploreUrl,
   triggerNode,
   modalTitle,
@@ -292,25 +303,22 @@ class SliceHeaderControls extends React.PureComponent<
         break;
       case MENU_KEYS.TOGGLE_CHART_DESCRIPTION:
         // eslint-disable-next-line no-unused-expressions
-        this.props.toggleExpandSlice &&
-          this.props.toggleExpandSlice(this.props.slice.slice_id);
+        this.props.toggleExpandSlice?.(this.props.slice.slice_id);
         break;
       case MENU_KEYS.EXPLORE_CHART:
         // eslint-disable-next-line no-unused-expressions
-        this.props.logExploreChart &&
-          this.props.logExploreChart(this.props.slice.slice_id);
+        this.props.logExploreChart?.(this.props.slice.slice_id);
         break;
       case MENU_KEYS.EXPORT_CSV:
         // eslint-disable-next-line no-unused-expressions
-        this.props.exportCSV && this.props.exportCSV(this.props.slice.slice_id);
+        this.props.exportCSV?.(this.props.slice.slice_id);
         break;
       case MENU_KEYS.FULLSCREEN:
         this.props.handleToggleFullSize();
         break;
       case MENU_KEYS.EXPORT_FULL_CSV:
         // eslint-disable-next-line no-unused-expressions
-        this.props.exportFullCSV &&
-          this.props.exportFullCSV(this.props.slice.slice_id);
+        this.props.exportFullCSV?.(this.props.slice.slice_id);
         break;
       case MENU_KEYS.DOWNLOAD_AS_IMAGE: {
         // menu closes with a delay, we need to hide it manually,
@@ -326,6 +334,9 @@ class SliceHeaderControls extends React.PureComponent<
           // @ts-ignore
         )(domEvent).then(() => {
           menu.style.visibility = 'visible';
+        });
+        this.props.logEvent?.(LOG_ACTIONS_CHART_DOWNLOAD_AS_IMAGE, {
+          chartId: this.props.slice.slice_id,
         });
         break;
       }
@@ -346,6 +357,7 @@ class SliceHeaderControls extends React.PureComponent<
       addDangerToast = () => {},
       supersetCanShare = false,
       isCached = [],
+      crossFiltersEnabled,
     } = this.props;
     const crossFilterItems = getChartMetadataRegistry().items;
     const isTable = slice.viz_type === 'table';
@@ -355,7 +367,6 @@ class SliceHeaderControls extends React.PureComponent<
         value.behaviors?.includes(Behavior.INTERACTIVE_CHART),
       )
       .find(([key]) => key === slice.viz_type);
-    const canEmitCrossFilter = slice.form_data?.emit_filter;
 
     const cachedWhen = (cachedDttm || []).map(itemCachedDttm =>
       moment.utc(itemCachedDttm).fromNow(),
@@ -382,6 +393,7 @@ class SliceHeaderControls extends React.PureComponent<
     const fullscreenLabel = isFullSize
       ? t('Exit fullscreen')
       : t('Enter fullscreen');
+
     const menu = (
       <Menu
         onClick={this.handleMenuClick}
@@ -443,7 +455,7 @@ class SliceHeaderControls extends React.PureComponent<
 
         {this.props.supersetCanExplore && (
           <Menu.Item key={MENU_KEYS.VIEW_RESULTS}>
-            <DashboardChartModalTrigger
+            <ViewResultsModalTrigger
               exploreUrl={this.props.exploreUrl}
               triggerNode={
                 <span data-test="view-query-menu-item">
@@ -466,18 +478,10 @@ class SliceHeaderControls extends React.PureComponent<
 
         {isFeatureEnabled(FeatureFlag.DRILL_TO_DETAIL) &&
           this.props.supersetCanExplore && (
-            <Menu.Item key={MENU_KEYS.DRILL_TO_DETAIL}>
-              <DashboardChartModalTrigger
-                exploreUrl={this.props.exploreUrl}
-                triggerNode={
-                  <span data-test="view-query-menu-item">
-                    {t('Drill to detail')}
-                  </span>
-                }
-                modalTitle={t('Drill to detail: %s', slice.slice_name)}
-                modalBody={<DrillDetailPane formData={this.props.formData} />}
-              />
-            </Menu.Item>
+            <DrillDetailMenuItems
+              chartId={slice.slice_id}
+              formData={this.props.formData}
+            />
           )}
 
         {(slice.description || this.props.supersetCanExplore) && (
@@ -486,7 +490,7 @@ class SliceHeaderControls extends React.PureComponent<
 
         {isFeatureEnabled(FeatureFlag.DASHBOARD_CROSS_FILTERS) &&
           isCrossFilter &&
-          canEmitCrossFilter && (
+          crossFiltersEnabled && (
             <>
               <Menu.Item key={MENU_KEYS.CROSS_FILTER_SCOPING}>
                 {t('Cross-filter scoping')}

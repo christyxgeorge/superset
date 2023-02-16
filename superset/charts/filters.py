@@ -26,6 +26,7 @@ from superset import db, security_manager
 from superset.connectors.sqla import models
 from superset.connectors.sqla.models import SqlaTable
 from superset.models.slice import Slice
+from superset.utils.core import get_user_id
 from superset.views.base import BaseFilter
 from superset.views.base_api import BaseFavoriteFilter
 
@@ -163,3 +164,18 @@ class ChartDashboardFilter(FilterRelationManyToManyEqual):  # pylint: disable=to
         else:
             query = self.apply_item(query, field, value)
         return query
+
+
+class ChartCreatedByMeFilter(BaseFilter):  # pylint: disable=too-few-public-methods
+    name = _("Created by me")
+    arg_name = "chart_created_by_me"
+
+    def apply(self, query: Query, value: Any) -> Query:
+        return query.filter(
+            or_(
+                Slice.created_by_fk  # pylint: disable=comparison-with-callable
+                == get_user_id(),
+                Slice.changed_by_fk  # pylint: disable=comparison-with-callable
+                == get_user_id(),
+            )
+        )

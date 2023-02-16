@@ -33,6 +33,7 @@ import Button from 'src/components/Button';
 import IndeterminateCheckbox from 'src/components/IndeterminateCheckbox';
 import waitForComponentToPaint from 'spec/helpers/waitForComponentToPaint';
 import { act } from 'react-dom/test-utils';
+import SubMenu from 'src/views/components/SubMenu';
 
 // store needed for withToasts(DatasetList)
 const mockStore = configureStore([thunk]);
@@ -52,7 +53,7 @@ const mockdatasets = [...new Array(3)].map((_, i) => ({
   changed_by: 'user',
   changed_on: new Date().toISOString(),
   database_name: `db ${i}`,
-  explore_url: `/explore/?dataset_type=table&dataset_id=${i}`,
+  explore_url: `/explore/?datasource_type=table&datasource_id=${i}`,
   id: i,
   schema: `schema ${i}`,
   table_name: `coolest table ${i}`,
@@ -222,6 +223,14 @@ describe('DatasetList', () => {
         .onPressEnter();
     });
     expect(fetchMock.calls(/dataset\/duplicate/)).toHaveLength(1);
+  });
+
+  it('renders a SubMenu', () => {
+    expect(wrapper.find(SubMenu)).toExist();
+  });
+
+  it('renders a SubMenu with no tabs', () => {
+    expect(wrapper.find(SubMenu).props().tabs).toBeUndefined();
   });
 });
 
