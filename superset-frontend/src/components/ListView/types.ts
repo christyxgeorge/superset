@@ -119,4 +119,7 @@ export enum FilterOperator {
   dashboardHasCreatedBy = 'dashboard_has_created_by',
   chartHasCreatedBy = 'chart_has_created_by',
   chartIsInDashboard = 'chart_is_in_dashboard',
+  dashboardTags = 'dashboard_tags',
+  chartTags = 'chart_tags',
+  savedQueryTags = 'saved_query_tags',
 }

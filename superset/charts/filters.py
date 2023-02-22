@@ -28,7 +28,7 @@ from superset.connectors.sqla.models import SqlaTable
 from superset.models.slice import Slice
 from superset.utils.core import get_user_id
 from superset.views.base import BaseFilter
-from superset.views.base_api import BaseFavoriteFilter
+from superset.views.base_api import BaseFavoriteFilter, BaseTagFilter
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +57,16 @@ class ChartFavoriteFilter(BaseFavoriteFilter):  # pylint: disable=too-few-public
     """
 
     arg_name = "chart_is_favorite"
+    class_name = "slice"
+    model = Slice
+
+
+class ChartTagFilter(BaseTagFilter):  # pylint: disable=too-few-public-methods
+    """
+    Custom filter for the GET list that filters all dashboards that a user has favored
+    """
+
+    arg_name = "chart_tags"
     class_name = "slice"
     model = Slice
 

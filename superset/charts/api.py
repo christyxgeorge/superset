@@ -55,6 +55,7 @@ from superset.charts.filters import (
     ChartFavoriteFilter,
     ChartFilter,
     ChartHasCreatedByFilter,
+    ChartTagFilter,
 )
 from superset.charts.schemas import (
     CHART_SCHEMAS,
@@ -140,6 +141,9 @@ class ChartRestApi(BaseSupersetModelRestApi):
         "query_context",
         "is_managed_externally",
     ]
+    if is_feature_enabled("TAGGING_SYSTEM"):
+        show_columns += ["tags.id", "tags.name", "tags.type"]
+
     show_select_columns = show_columns + ["table.id"]
     list_columns = [
         "is_managed_externally",
@@ -184,6 +188,8 @@ class ChartRestApi(BaseSupersetModelRestApi):
         "url",
         "viz_type",
     ]
+    if is_feature_enabled("TAGGING_SYSTEM"):
+        list_columns += ["tags.id", "tags.name", "tags.type"]
     list_select_columns = list_columns + ["changed_by_fk", "changed_on"]
     order_columns = [
         "changed_by.first_name",
@@ -212,6 +218,8 @@ class ChartRestApi(BaseSupersetModelRestApi):
         "slice_name",
         "viz_type",
     ]
+    if is_feature_enabled("TAGGING_SYSTEM"):
+        search_columns += ["tags"]
     base_order = ("changed_on", "desc")
     base_filters = [["id", ChartFilter, lambda: []]]
     search_filters = {
@@ -220,6 +228,8 @@ class ChartRestApi(BaseSupersetModelRestApi):
         "created_by": [ChartHasCreatedByFilter, ChartCreatedByMeFilter],
         "dashboards": [ChartDashboardFilter],
     }
+    if is_feature_enabled("TAGGING_SYSTEM"):
+        search_filters["tags"] = [ChartTagFilter]
 
     # Will just affect _info endpoint
     edit_columns = ["slice_name"]
@@ -563,7 +573,7 @@ class ChartRestApi(BaseSupersetModelRestApi):
         if not chart:
             return self.response_404()
 
-        chart_url = get_url_path("Superset.slice", slice_id=chart.id, standalone="true")
+        chart_url = get_url_path("Superset.slice", slice_id=chart.id)
         screenshot_obj = ChartScreenshot(chart_url, chart.digest)
         cache_key = screenshot_obj.cache_key(window_size, thumb_size)
         image_url = get_url_path(
@@ -686,7 +696,7 @@ class ChartRestApi(BaseSupersetModelRestApi):
             return self.response_404()
 
         current_user = get_current_user()
-        url = get_url_path("Superset.slice", slice_id=chart.id, standalone="true")
+        url = get_url_path("Superset.slice", slice_id=chart.id)
         if kwargs["rison"].get("force", False):
             logger.info(
                 "Triggering thumbnail compute (chart id: %s) ASYNC", str(chart.id)
