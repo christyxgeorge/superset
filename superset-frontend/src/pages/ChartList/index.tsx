@@ -166,15 +166,24 @@ const createFetchDashboards = async (
   });
 
   const mappedDashboards = json?.result?.map(
-    ({ dashboard_title: dashboardTitle, id }: { dashboard_title: string; id: number }) => ({
+    ({
+      dashboard_title: dashboardTitle,
+      id,
+    }: {
+      dashboard_title: string;
+      id: number;
+    }) => ({
       label: dashboardTitle,
       value: id,
     }),
   );
 
   // Add the 'No Dashboard Option' (Only on the first page)
-  if (mappedDashboards && page == 0) {
-    const dashboards = [{ label: '* No Dashboards *', value: -1 }, ...mappedDashboards];
+  if (mappedDashboards && page === 0) {
+    const dashboards = [
+      { label: '* No Dashboards *', value: -1 },
+      ...mappedDashboards,
+    ];
     return {
       data: uniqBy<SelectOption>(dashboards, 'value'),
       totalCount: json?.count + 1,
@@ -417,17 +426,24 @@ function ChartList(props: ChartListProps) {
       {
         Cell: ({
           row: {
-            original: {
-              dashboards,
-            },
+            original: { dashboards },
           },
         }: any) => {
-          const items = dashboards.map(d => {
-            return { id: d.id, name: d.dashboard_title };
-          });
-          return <CountTooltip label="Dashboards" items={items} countColor="#4ea5c5" viewBox="0 -1 24 24" />
+          const items = dashboards.map(d => ({
+            id: d.id,
+            name: d.dashboard_title,
+          }));
+          return (
+            <CountTooltip
+              label="Dashboards"
+              items={items}
+              countColor="#4ea5c5"
+              viewBox="0 -1 24 24"
+            />
+          );
         },
         Header: '',
+        id: 'ts_dashboards',
         accessor: 'dashboards',
         disableSortBy: true,
         size: 'xxs',
