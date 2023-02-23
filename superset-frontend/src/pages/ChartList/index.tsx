@@ -142,60 +142,6 @@ const createFetchDatasets = async (
   };
 };
 
-const createFetchDashboards = async (
-  filterValue = '',
-  page: number,
-  pageSize: number,
-) => {
-  // add filters if filterValue
-  const filters = filterValue
-    ? { filters: [{ col: 'dashboard_title', opr: 'sw', value: filterValue }] }
-    : {};
-  const queryParams = rison.encode({
-    columns: ['dashboard_title', 'id'],
-    keys: ['none'],
-    order_column: 'dashboard_title',
-    order_direction: 'asc',
-    page,
-    page_size: pageSize,
-    ...filters,
-  });
-
-  const { json = {} } = await SupersetClient.get({
-    endpoint: `/api/v1/dashboard/?q=${queryParams}`,
-  });
-
-  const mappedDashboards = json?.result?.map(
-    ({
-      dashboard_title: dashboardTitle,
-      id,
-    }: {
-      dashboard_title: string;
-      id: number;
-    }) => ({
-      label: dashboardTitle,
-      value: id,
-    }),
-  );
-
-  // Add the 'No Dashboard Option' (Only on the first page)
-  if (mappedDashboards && page === 0) {
-    const dashboards = [
-      { label: '* No Dashboards *', value: -1 },
-      ...mappedDashboards,
-    ];
-    return {
-      data: uniqBy<SelectOption>(dashboards, 'value'),
-      totalCount: json?.count + 1,
-    };
-  }
-  // Return the reformatted API results!
-  return {
-    data: uniqBy<SelectOption>(mappedDashboards, 'value'),
-    totalCount: json?.count,
-  };
-};
-
 interface ChartListProps {
   addDangerToast: (msg: string) => void;
   addSuccessToast: (msg: string) => void;
@@ -316,15 +262,7 @@ function ChartList(props: ChartListProps) {
   ) => {
     // add filters if filterValue
     const filters = filterValue
-      ? {
-          filters: [
-            {
-              col: 'dashboards',
-              opr: FilterOperator.relationManyMany,
-              value: filterValue,
-            },
-          ],
-        }
+      ? { filters: [{ col: 'dashboard_title', opr: 'sw', value: filterValue }] }
       : {};
     const queryParams = rison.encode({
       columns: ['dashboard_title', 'id'],
@@ -342,7 +280,7 @@ function ChartList(props: ChartListProps) {
     }).catch(() =>
       addDangerToast(t('An error occurred while fetching dashboards')),
     );
-    const dashboards = response?.json?.result?.map(
+    const mappedDashboards = response?.json?.result?.map(
       ({
         dashboard_title: dashboardTitle,
         id,
@@ -354,6 +292,11 @@ function ChartList(props: ChartListProps) {
         value: id,
       }),
     );
+    // Add the 'No Dashboard Option' (Only on the first page)
+    const dashboards =
+      mappedDashboards && page === 0
+        ? [{ label: '* No Dashboards *', value: -1 }, ...mappedDashboards]
+        : mappedDashboards || [];
     return {
       data: uniqBy<SelectOption>(dashboards, 'value'),
       totalCount: response?.json?.count,
@@ -426,6 +369,20 @@ function ChartList(props: ChartListProps) {
       {
         Cell: ({
           row: {
+            original: {
+              datasource_name_text: dsNameTxt,
+              datasource_url: dsUrl,
+            },
+          },
+        }: any) => <GenericLink to={dsUrl}>{dsNameTxt}</GenericLink>,
+        Header: t('Dataset'),
+        accessor: 'datasource_id',
+        disableSortBy: true,
+        size: 'xl',
+      },
+      {
+        Cell: ({
+          row: {
             original: { dashboards },
           },
         }: any) => {
@@ -443,24 +400,10 @@ function ChartList(props: ChartListProps) {
           );
         },
         Header: '',
-        id: 'ts_dashboards',
+        id: 'dashboard_count',
         accessor: 'dashboards',
         disableSortBy: true,
         size: 'xxs',
-      },
-      {
-        Cell: ({
-          row: {
-            original: {
-              datasource_name_text: dsNameTxt,
-              datasource_url: dsUrl,
-            },
-          },
-        }: any) => <GenericLink to={dsUrl}>{dsNameTxt}</GenericLink>,
-        Header: t('Dataset'),
-        accessor: 'datasource_id',
-        disableSortBy: true,
-        size: 'xl',
       },
       {
         Cell: ({
@@ -744,15 +687,6 @@ function ChartList(props: ChartListProps) {
           }),
       },
       {
-        Header: t('Dashboard'),
-        id: 'dashboards',
-        input: 'select',
-        operator: FilterOperator.chartIsInDashboard,
-        unfilteredLabel: t('All'),
-        fetchSelects: createFetchDashboards,
-        paginate: true,
-      },
-      {
         Header: t('Dataset'),
         key: 'dataset',
         id: 'datasource_id',
@@ -767,7 +701,9 @@ function ChartList(props: ChartListProps) {
         key: 'dashboards',
         id: 'dashboards',
         input: 'select',
-        operator: FilterOperator.relationManyMany,
+        // Changing to custom filter to support 'No Dashboards'
+        // operator: FilterOperator.relationManyMany,
+        operator: FilterOperator.chartIsInDashboard,
         unfilteredLabel: t('All'),
         fetchSelects: fetchDashboards,
         paginate: true,
