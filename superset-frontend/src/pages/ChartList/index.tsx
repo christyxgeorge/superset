@@ -116,7 +116,7 @@ const createFetchDatasets = async (
     ? { filters: [{ col: 'table_name', opr: 'sw', value: filterValue }] }
     : {};
   const queryParams = rison.encode({
-    columns: ['table_name', 'id'],
+    columns: ['datasource_name', 'datasource_id'],
     keys: ['none'],
     order_column: 'table_name',
     order_direction: 'asc',
@@ -386,7 +386,7 @@ function ChartList(props: ChartListProps) {
             original: { dashboards },
           },
         }: any) => {
-          const items = dashboards.map(d => ({
+          const items = dashboards.map((d: ChartLinkedDashboard) => ({
             id: d.id,
             name: d.dashboard_title,
           }));

@@ -19,13 +19,13 @@
 import React from 'react';
 import { shallow } from 'enzyme';
 import { Tooltip } from 'src/components/Tooltip';
-import { CountTooltip } from 'src/components/CountTooltip';
+import CountTooltip from 'src/components/CountTooltip';
 
 describe('CountTooltip', () => {
   const mockedProps = {
     label: 'Dashboards',
-    items: ['Dashboard 1','Dashboard 2','Dashboard 3'],
-    countColor: "#4ea5c5"
+    items: ['Dashboard 1', 'Dashboard 2', 'Dashboard 3'],
+    countColor: '#4ea5c5',
   };
   it('renders', () => {
     expect(React.isValidElement(<CountTooltip>TEST</CountTooltip>)).toBe(true);
@@ -40,8 +40,8 @@ describe('CountTooltip', () => {
     expect(wrapper.find(Tooltip)).toExist();
   });
   const noLabelProps = {
-    items: ['Dashboard 4','Dashboard 5','Dashboard 6'],
-    countColor: "#4ea5c5"
+    items: ['Dashboard 4', 'Dashboard 5', 'Dashboard 6'],
+    countColor: '#4ea5c5',
   };
   it('renders with no label', () => {
     expect(

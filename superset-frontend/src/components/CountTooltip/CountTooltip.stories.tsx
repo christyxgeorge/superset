@@ -38,7 +38,7 @@ export const InteractiveCountTooltip = (props: CountTooltipProps) => {
 
 InteractiveCountTooltip.args = {
   label: 'Dashboards',
-  items: ['Dashboard 1','Dashboard 2','Dashboard 3'],
+  items: ['Dashboard 1', 'Dashboard 2', 'Dashboard 3'],
 };
 
 InteractiveCountTooltip.argTypes = {

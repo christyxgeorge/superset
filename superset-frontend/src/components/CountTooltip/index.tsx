@@ -17,14 +17,16 @@
  * under the License.
  */
 
-import React from 'react';
-import { styled } from '@superset-ui/core';
+import React, { ReactNode } from 'react';
+import { styled, SupersetTheme } from '@superset-ui/core';
 import { Tooltip } from 'src/components/Tooltip';
 import { Avatar } from 'src/components';
 
 export interface CountTooltipProps {
+  children?: ReactNode;
+  items?: Array<any>;
   className?: string;
-  tooltip: string;
+  label?: string;
   placement?:
     | 'bottom'
     | 'left'
@@ -41,6 +43,8 @@ export interface CountTooltipProps {
     | undefined;
   trigger?: string | Array<string>;
   overlayStyle?: any;
+  labelColor?: string;
+  countColor?: string;
   bgColor?: string;
   viewBox?: string;
 }
@@ -96,9 +100,10 @@ export default function CountTooltip({
   overlayStyle = defaultOverlayStyle,
   countColor = defaultColor,
   bgColor = defaultColor,
-  viewBox = '0 -2 24 24',
 }: CountTooltipProps) {
-  if (!items || !items.length) { return <></>; }
+  if (!items || !items.length) {
+    return <></>;
+  }
   return (
     <StyledTooltip
       id="tooltip-count-items"
@@ -107,15 +112,16 @@ export default function CountTooltip({
           {label && (
             <div>
               <div>{label}:</div>
-              <StyledHR/>
+              <StyledHR />
             </div>
           )}
           <StyledUL>
-          {items.map((item)=>{
-            return <li key={item.id}>{item.name}</li>
-          })}
+            {items.map(item => (
+              <li key={item.id}>{item.name}</li>
+            ))}
           </StyledUL>
-        </StyledTooltipTitle>}
+        </StyledTooltipTitle>
+      }
       placement={placement}
       trigger={trigger}
       overlayStyle={overlayStyle}
