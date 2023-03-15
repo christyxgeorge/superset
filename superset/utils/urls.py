@@ -29,6 +29,10 @@ def get_url_host(user_friendly: bool = False) -> str:
 
 
 def headless_url(path: str, user_friendly: bool = False) -> str:
+    if user_friendly:
+        # This is to ensure that if the user_friendly URL also has a path, 
+        # we use that as prefix
+        return get_url_host(user_friendly=user_friendly) + path
     return urllib.parse.urljoin(get_url_host(user_friendly=user_friendly), path)
 
 
