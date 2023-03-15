@@ -84,6 +84,7 @@ from superset.utils.core import (
     get_user_id,
     RowLevelSecurityFilterType,
 )
+from superset.utils.filters import get_dataset_access_filters
 from superset.utils.urls import get_url_host
 
 if TYPE_CHECKING:
@@ -97,6 +98,8 @@ if TYPE_CHECKING:
     from superset.viz import BaseViz
 
 logger = logging.getLogger(__name__)
+
+DATABASE_PERM_REGEX = re.compile(r"^\[.+\]\.\(id\:(?P<id>\d+)\)$")
 
 
 class DatabaseAndSchema(NamedTuple):
@@ -525,8 +528,6 @@ class SupersetSecurityManager(  # pylint: disable=too-many-public-methods
         :returns: The list of datasources
         """
 
-        user_perms = self.user_view_menu_names("datasource_access")
-        schema_perms = self.user_view_menu_names("schema_access")
         user_datasources = set()
 
         # pylint: disable=import-outside-toplevel
@@ -534,12 +535,7 @@ class SupersetSecurityManager(  # pylint: disable=too-many-public-methods
 
         user_datasources.update(
             self.get_session.query(SqlaTable)
-            .filter(
-                or_(
-                    SqlaTable.perm.in_(user_perms),
-                    SqlaTable.schema_perm.in_(schema_perms),
-                )
-            )
+            .filter(get_dataset_access_filters(SqlaTable))
             .all()
         )
 
@@ -603,6 +599,19 @@ class SupersetSecurityManager(  # pylint: disable=too-many-public-methods
             ).all()
             return {s.name for s in view_menu_names}
         return set()
+
+    def get_accessible_databases(self) -> List[int]:
+        """
+        Return the list of databases accessible by the user.
+
+        :return: The list of accessible Databases
+        """
+        perms = self.user_view_menu_names("database_access")
+        return [
+            int(match.group("id"))
+            for perm in perms
+            if (match := DATABASE_PERM_REGEX.match(perm))
+        ]
 
     def get_schemas_accessible_by_user(
         self, database: "Database", schemas: List[str], hierarchical: bool = True
@@ -1778,7 +1787,7 @@ class SupersetSecurityManager(  # pylint: disable=too-many-public-methods
         return []
 
     def raise_for_access(
-        # pylint: disable=too-many-arguments,too-many-locals
+        # pylint: disable=too-many-arguments, too-many-locals, too-many-branches
         self,
         database: Optional["Database"] = None,
         datasource: Optional["BaseDatasource"] = None,
@@ -1814,8 +1823,20 @@ class SupersetSecurityManager(  # pylint: disable=too-many-public-methods
                 return
 
             if query:
+                # Some databases can change the default schema in which the query wil run,
+                # respecting the selection in SQL Lab. If that's the case, the query
+                # schema becomes the default one.
+                if database.db_engine_spec.dynamic_schema:
+                    default_schema = query.schema
+                # For other databases, the selected schema in SQL Lab is used only for
+                # table discovery and autocomplete. In this case we need to use the
+                # database default schema for tables that don't have an explicit schema.
+                else:
+                    with database.get_inspector_with_context() as inspector:
+                        default_schema = inspector.default_schema_name
+
                 tables = {
-                    Table(table_.table, table_.schema or query.schema)
+                    Table(table_.table, table_.schema or default_schema)
                     for table_ in sql_parse.ParsedQuery(query.sql).tables
                 }
             elif table:
@@ -2196,7 +2217,6 @@ class SupersetSecurityManager(  # pylint: disable=too-many-public-methods
         return hasattr(user, "is_guest_user") and user.is_guest_user
 
     def get_current_guest_user_if_guest(self) -> Optional[GuestUser]:
-
         if self.is_guest_user():
             return g.user
         return None
