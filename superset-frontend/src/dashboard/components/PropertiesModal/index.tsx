@@ -17,7 +17,7 @@
  * under the License.
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Input } from 'src/components/Input';
+import { Input, TextArea } from 'src/components/Input';
 import { FormItem } from 'src/components/Form';
 import jsonStringify from 'json-stringify-pretty-compact';
 import Button from 'src/components/Button';
@@ -701,6 +701,34 @@ const PropertiesModal = ({
             </p>
           </Col>
         </Row>
+        <Row gutter={16}>
+          <Col xs={24} md={12}>
+            <FormItem>
+              <StyledFormItem label={t('Description')} name="description">
+                <TextArea rows={3} style={{ maxWidth: '100%' }} />
+              </StyledFormItem>
+            </FormItem>
+          </Col>
+          {isFeatureEnabled(FeatureFlag.TAGGING_SYSTEM) ? (
+            <Col xs={24} md={12}>
+              <StyledFormItem label={t('Tags')}>
+                <AsyncSelect
+                  ariaLabel="Tags"
+                  mode="multiple"
+                  allowNewOptions
+                  value={tagsAsSelectValues}
+                  options={loadTags}
+                  onChange={handleChangeTags}
+                  allowClear
+                />
+              </StyledFormItem>
+              <p className="help-block">
+                {t('A list of tags that have been applied to this chart.')}
+              </p>
+            </Col>
+        ) : null}
+        </Row>
+
         {isFeatureEnabled(FeatureFlag.DASHBOARD_RBAC)
           ? getRowsWithRoles()
           : getRowsWithoutRoles()}
@@ -730,33 +758,6 @@ const PropertiesModal = ({
             </p>
           </Col>
         </Row>
-        {isFeatureEnabled(FeatureFlag.TAGGING_SYSTEM) ? (
-          <Row gutter={16}>
-            <Col xs={24} md={12}>
-              <h3 css={{ marginTop: '1em' }}>{t('Tags')}</h3>
-            </Col>
-          </Row>
-        ) : null}
-        {isFeatureEnabled(FeatureFlag.TAGGING_SYSTEM) ? (
-          <Row gutter={16}>
-            <Col xs={24} md={12}>
-              <StyledFormItem>
-                <AsyncSelect
-                  ariaLabel="Tags"
-                  mode="multiple"
-                  allowNewOptions
-                  value={tagsAsSelectValues}
-                  options={loadTags}
-                  onChange={handleChangeTags}
-                  allowClear
-                />
-              </StyledFormItem>
-              <p className="help-block">
-                {t('A list of tags that have been applied to this chart.')}
-              </p>
-            </Col>
-          </Row>
-        ) : null}
         <Row>
           <Col xs={24} md={24}>
             <h3 style={{ marginTop: '1em' }}>
