@@ -726,7 +726,7 @@ const PropertiesModal = ({
                 {t('A list of tags that have been applied to this chart.')}
               </p>
             </Col>
-        ) : null}
+          ) : null}
         </Row>
 
         {isFeatureEnabled(FeatureFlag.DASHBOARD_RBAC)
