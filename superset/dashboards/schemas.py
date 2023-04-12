@@ -34,6 +34,7 @@ thumbnail_query_schema = {
 }
 
 dashboard_title_description = "A title for the dashboard."
+dashboard_desc_description = "Purpose and details of the dashboard."
 slug_description = "Unique identifying part for the web address of the dashboard."
 owners_description = (
     "Owner are users ids allowed to delete or change this dashboard. "
@@ -177,6 +178,7 @@ class DashboardGetResponseSchema(Schema):
     slug = fields.String()
     url = fields.String()
     dashboard_title = fields.String(description=dashboard_title_description)
+    description = fields.String(description=dashboard_desc_description)
     thumbnail_url = fields.String()
     published = fields.Boolean()
     css = fields.String(description=css_description)
@@ -304,6 +306,7 @@ class DashboardPutSchema(BaseDashboardSchema):
         allow_none=True,
         validate=Length(0, 500),
     )
+    description = fields.String(description=dashboard_desc_description, allow_none=True)
     slug = fields.String(
         description=slug_description, allow_none=True, validate=Length(0, 255)
     )

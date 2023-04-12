@@ -3340,6 +3340,11 @@
             "description": "A title for the dashboard.",
             "type": "string"
           },
+          "description": {
+            "description": "Description of the dashboard purpose.",
+            "nullable": true,
+            "type": "string"
+            },
           "id": {
             "format": "int32",
             "type": "integer"

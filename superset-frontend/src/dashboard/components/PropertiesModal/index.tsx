@@ -171,6 +171,7 @@ const PropertiesModal = ({
       const {
         id,
         dashboard_title,
+        description,
         slug,
         certified_by,
         certification_details,
@@ -182,6 +183,7 @@ const PropertiesModal = ({
       const dashboardInfo = {
         id,
         title: dashboard_title,
+        description,
         slug: slug || '',
         certifiedBy: certified_by || '',
         certificationDetails: certification_details || '',
@@ -348,7 +350,7 @@ const PropertiesModal = ({
   };
 
   const onFinish = () => {
-    const { title, slug, certifiedBy, certificationDetails } =
+    const { title, slug, certifiedBy, certificationDetails, description } =
       form.getFieldsValue();
     let currentColorScheme = colorScheme;
     let colorNamespace = '';
@@ -432,6 +434,7 @@ const PropertiesModal = ({
     const onSubmitProps = {
       id: dashboardId,
       title,
+      description,
       slug,
       jsonMetadata: currentJsonMetadata,
       owners,
@@ -451,6 +454,7 @@ const PropertiesModal = ({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           dashboard_title: title,
+          description,
           slug: slug || null,
           json_metadata: currentJsonMetadata || null,
           owners: (owners || []).map(o => o.id),
