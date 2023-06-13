@@ -70,12 +70,12 @@ class DashboardDAO(BaseDAO):
         return dashboard
 
     @staticmethod
-    def get_datasets_for_dashboard(id_or_slug: str) -> List[Any]:
+    def get_datasets_for_dashboard(id_or_slug: str) -> list[Any]:
         dashboard = DashboardDAO.get_by_id_or_slug(id_or_slug)
         return dashboard.datasets_trimmed_for_slices()
 
     @staticmethod
-    def get_charts_for_dashboard(id_or_slug: str) -> List[Slice]:
+    def get_charts_for_dashboard(id_or_slug: str) -> list[Slice]:
         return DashboardDAO.get_by_id_or_slug(id_or_slug).slices
 
     @staticmethod
@@ -175,7 +175,7 @@ class DashboardDAO(BaseDAO):
         return model
 
     @staticmethod
-    def bulk_delete(models: Optional[List[Dashboard]], commit: bool = True) -> None:
+    def bulk_delete(models: Optional[list[Dashboard]], commit: bool = True) -> None:
         item_ids = [model.id for model in models] if models else []
         # bulk delete, first delete related data
         if models:
@@ -198,15 +198,14 @@ class DashboardDAO(BaseDAO):
     @staticmethod
     def set_dash_metadata(  # pylint: disable=too-many-locals
         dashboard: Dashboard,
-        data: Dict[Any, Any],
-        old_to_new_slice_ids: Optional[Dict[int, int]] = None,
+        data: dict[Any, Any],
+        old_to_new_slice_ids: Optional[dict[int, int]] = None,
         commit: bool = False,
     ) -> Dashboard:
-        positions = data.get("positions")
         new_filter_scopes = {}
         md = dashboard.params_dict
 
-        if positions is not None:
+        if (positions := data.get("positions")) is not None:
             # find slices in the position data
             slice_ids = [
                 value.get("meta", {}).get("chartId")
@@ -238,7 +237,7 @@ class DashboardDAO(BaseDAO):
             if "filter_scopes" in data:
                 # replace filter_id and immune ids from old slice id to new slice id:
                 # and remove slice ids that are not in dash anymore
-                slc_id_dict: Dict[int, int] = {}
+                slc_id_dict: dict[int, int] = {}
                 if old_to_new_slice_ids:
                     slc_id_dict = {
                         old: new
@@ -291,7 +290,7 @@ class DashboardDAO(BaseDAO):
         return dashboard
 
     @staticmethod
-    def favorited_ids(dashboards: List[Dashboard]) -> List[FavStar]:
+    def favorited_ids(dashboards: list[Dashboard]) -> list[FavStar]:
         ids = [dash.id for dash in dashboards]
         return [
             star.obj_id
@@ -325,7 +324,7 @@ class DashboardDAO(BaseDAO):
 
     @classmethod
     def copy_dashboard(
-        cls, original_dash: Dashboard, data: Dict[str, Any]
+        cls, original_dash: Dashboard, data: dict[str, Any]
     ) -> Dashboard:
         dash = Dashboard()
         dash.owners = [g.user] if g.user else []
@@ -333,7 +332,7 @@ class DashboardDAO(BaseDAO):
         dash.css = data.get("css")
 
         metadata = json.loads(data["json_metadata"])
-        old_to_new_slice_ids: Dict[int, int] = {}
+        old_to_new_slice_ids: dict[int, int] = {}
         if data.get("duplicate_slices"):
             # Duplicating slices as well, mapping old ids to new ones
             for slc in original_dash.slices:
@@ -353,6 +352,7 @@ class DashboardDAO(BaseDAO):
         else:
             dash.slices = original_dash.slices
 
+        dash.params = original_dash.params
         cls.set_dash_metadata(dash, metadata, old_to_new_slice_ids)
         db.session.add(dash)
         db.session.commit()

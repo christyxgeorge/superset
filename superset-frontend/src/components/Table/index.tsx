@@ -44,7 +44,7 @@ export enum ETableAction {
   FILTER = 'filter',
 }
 
-export { ColumnsType };
+export type { ColumnsType };
 export type OnChangeFunction<RecordType> =
   AntTableProps<RecordType>['onChange'];
 
@@ -58,6 +58,10 @@ export interface TableProps<RecordType> {
    * Data that will populate the each row and map to the column key.
    */
   data: RecordType[];
+  /**
+   * Whether to show all table borders
+   */
+  bordered?: boolean;
   /**
    * Table column definitions.
    */
@@ -224,6 +228,7 @@ export function Table<RecordType extends object>(
 ) {
   const {
     data,
+    bordered,
     columns,
     selectedRows = defaultRowSelection,
     handleRowSelection,
@@ -376,6 +381,7 @@ export function Table<RecordType extends object>(
     onRow,
     theme,
     height: bodyHeight,
+    bordered,
   };
 
   return (
@@ -391,7 +397,14 @@ export function Table<RecordType extends object>(
         {virtualize && (
           <StyledVirtualTable
             {...sharedProps}
-            scroll={{ y: 300, x: '100vw' }}
+            scroll={{
+              y: 300,
+              x: '100vw',
+              // To avoid jest failure by scrollTo
+              ...(process.env.WEBPACK_MODE === 'test' && {
+                scrollToFirstRowOnChange: false,
+              }),
+            }}
           />
         )}
       </div>
